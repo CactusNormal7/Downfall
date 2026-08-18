@@ -28,7 +28,12 @@ export function logEvent(event: GameEvent): void {
       break;
     case 'CHAIN_STEP':
       // A grepper pour calibrer CHAIN_MULTIPLIER_STEP en playtest.
+      // Le champ `grid` sert a l'animation (ui/render.ts) ; on ne le logge pas,
+      // une grille entiere par ligne rendrait les logs illisibles.
       log('CHAIN', 'STEP', { player: event.player, depth: event.depth, multiplier: event.multiplier });
+      break;
+    case 'BOARD_SETTLED':
+      // Idem : sert uniquement a l'animation, pas de grille dans les logs.
       break;
     case 'GARBAGE_SENT':
       // [NET] En vrai PvP, cet evenement declenche l'envoi du message

@@ -18,6 +18,7 @@ import type {
 } from './types.js';
 import {
   applyGravity,
+  cloneGrid,
   createGrid,
   dropRow,
   insertGarbageRows,
@@ -148,6 +149,10 @@ function resolveBoard(
       player: player.id,
       depth,
       multiplier: 1 + Math.max(0, depth - 1) * 0.5,
+      // Snapshot AVANT tout effacement de ce depth : les mots trouves y sont
+      // encore visibles. C'est la base que l'UI surligne avant de les faire
+      // disparaitre — voir le commentaire du champ dans core/types.ts.
+      grid: cloneGrid(grid),
     });
 
     for (const match of matches) {
@@ -162,6 +167,7 @@ function resolveBoard(
         row: match.row,
         fromCol: match.fromCol,
         toCol: match.toCol,
+        cells: match.cells,
         score: gained,
         chainDepth: depth,
       });
@@ -194,6 +200,11 @@ function resolveBoard(
 
     // C'est cette gravite qui peut faire naitre le maillon suivant de la chaine.
     grid = applyGravity(grid);
+
+    // Snapshot APRES effacement + effets + gravite de ce depth. Avec le
+    // CHAIN_STEP ci-dessus, l'UI a exactement les deux bornes "avant / apres"
+    // necessaires pour animer ce maillon sans reimplementer resolveBoard.
+    events.push({ type: 'BOARD_SETTLED', player: player.id, chainDepth: depth, grid: cloneGrid(grid) });
   }
 
   if (depth > bestChain) bestChain = depth;

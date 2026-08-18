@@ -87,9 +87,33 @@ describe('moteur', () => {
     const { state: after, events } = run(state, [{ type: 'HARD_DROP', player: 'P0' }], dictionary);
     const matched = events.find((event) => event.type === 'WORD_MATCHED');
     expect(matched && matched.type === 'WORD_MATCHED' && matched.word).toBe('CHAT');
+    expect(matched && matched.type === 'WORD_MATCHED' && matched.cells).toHaveLength(4);
     expect(after.players.P0.score).toBeGreaterThan(0);
     expect(after.players.P0.wordsCleared).toBe(1);
     expect(gridToAscii(after.players.P0.grid)).not.toContain('CHAT');
+  });
+
+  it('fournit les snapshots avant/apres necessaires a l animation', () => {
+    // CHAIN_STEP.grid doit encore montrer le mot ; BOARD_SETTLED.grid ne doit
+    // plus le montrer. Sans ce contrat, l'UI ne peut pas surligner un mot
+    // avant de l'effacer sans reimplementer sa propre resolution.
+    const dictionary = tinyDictionary(['CHAT']);
+    let state = createGame(1, 2);
+    state = step(state, { type: 'TICK', player: 'P0' }, dictionary).state;
+    state = withGrid(state, bottomGrid('CHA'));
+    state = {
+      ...state,
+      players: {
+        ...state.players,
+        P0: { ...state.players.P0, falling: { letter: 'T', row: 0, col: 3 } },
+      },
+    };
+
+    const { events } = run(state, [{ type: 'HARD_DROP', player: 'P0' }], dictionary);
+    const before = events.find((event) => event.type === 'CHAIN_STEP');
+    const after = events.find((event) => event.type === 'BOARD_SETTLED');
+    expect(before && before.type === 'CHAIN_STEP' && gridToAscii(before.grid)).toContain('CHAT');
+    expect(after && after.type === 'BOARD_SETTLED' && gridToAscii(after.grid)).not.toContain('CHAT');
   });
 
   it('route le garbage vers l adversaire, pas vers soi-meme', () => {

@@ -90,10 +90,41 @@ export type GameEvent =
       row: number;
       fromCol: number;
       toCol: number;
+      /**
+       * Cellules exactes du mot, dans l'ordre de lecture. Necessaire des que le
+       * mot n'est plus forcement horizontal : row/fromCol/toCol seuls ne
+       * suffisent pas a savoir quelles cases surligner pour une diagonale.
+       */
+      cells: Array<{ row: number; col: number }>;
       score: number;
       chainDepth: number;
     }
-  | { type: 'CHAIN_STEP'; player: PlayerId; depth: number; multiplier: number }
+  | {
+      type: 'CHAIN_STEP';
+      player: PlayerId;
+      depth: number;
+      multiplier: number;
+      /**
+       * Grille telle qu'elle est AU MOMENT ou ce maillon est detecte : les mots
+       * de ce depth y sont encore visibles (rien n'est efface). C'est la base
+       * sur laquelle l'UI surligne les mots avant de les faire disparaitre —
+       * sans ca, elle devrait reimplementer sa propre resolution pour savoir
+       * a quoi la grille ressemblait juste avant le clear.
+       */
+      grid: Grid;
+    }
+  | {
+      type: 'BOARD_SETTLED';
+      player: PlayerId;
+      chainDepth: number;
+      /**
+       * Grille apres effacement des mots de ce depth, effets appliques et
+       * gravite retombee. Pendant du "avant" fourni par CHAIN_STEP.grid :
+       * ensemble, les deux bornent exactement ce qu'un joueur doit voir pour
+       * comprendre "ces lettres ont forme ce mot, puis ont disparu".
+       */
+      grid: Grid;
+    }
   /** [NET] A brancher sur un envoi WS `GARBAGE_SEND` vers le serveur. */
   | { type: 'GARBAGE_SENT'; from: PlayerId; to: PlayerId; rows: number; word: string }
   | { type: 'GARBAGE_APPLIED'; player: PlayerId; rows: number }

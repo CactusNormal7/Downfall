@@ -37,6 +37,11 @@ immédiate, `Entrée` rejouer.
 - **Mots à effet** : `BOOM` et `BOMBE` explosent, `FORER` perce une colonne,
   `ORAGE` envoie du bruit en bonus.
 - Topping out et condition de victoire.
+- **Animation de clear** : un mot validé est surligné avec son score affiché
+  avant de disparaître, quel que soit son sens de lecture (§3 bis).
+- **Votre terrain est prioritaire à l'écran**, celui de l'adversaire reste
+  visible mais nettement plus petit — c'est une information d'appoint, pas un
+  second plateau à lire lettre par lettre.
 
 Hors périmètre V0 : vrai réseau, comptes, persistance.
 
@@ -104,6 +109,38 @@ coupées par défaut : trop bavardes).
 Pour brancher le vrai réseau : écrire `WebSocketTransport` implémentant
 `Transport`, le substituer dans `src/main.ts`, et remplacer le bloc bot par les
 actions reçues du serveur. Le moteur ne bouge pas.
+
+## 3 bis. Pourquoi des lettres disparaissaient « sans raison »
+
+Avec les mots de 2 lettres et les 8 sens de lecture (§4), poser une lettre a
+de bonnes chances de compléter un mot vertical, diagonal ou à l'envers que
+l'œil ne suit pas. Sans repère visuel, ça ressemble à un bug : des lettres
+disparaissent alors que rien à l'horizontale ne semblait former de mot.
+
+**Vérifié, ce n'en est pas un.** Chaque effacement a été rejoué indépendamment
+contre le moteur réel — 23 396 verrouillages de lettres simulés, comparés à un
+rejeu manuel de `resolveBoard()` à partir du même point de départ — zéro
+incohérence. Le mot annoncé correspond toujours exactement aux lettres
+effacées.
+
+Le vrai problème était l'absence de signal : le moteur résout tout un
+enchaînement de clears en un seul appel synchrone et ne dessine rien
+(CLAUDE.md §3, « le moteur ne logge pas et ne dessine pas »), donc rien
+n'indiquait *quel* mot venait de disparaître ni dans *quel* sens il se lisait.
+
+**Correctif : surligner avant d'effacer, sans dupliquer la logique du
+moteur.** `resolveBoard()` (`src/core/engine.ts`) émet maintenant deux
+snapshots de grille par maillon de chaîne :
+
+- `CHAIN_STEP.grid` — l'état juste avant ce maillon, mot encore visible.
+- `BOARD_SETTLED.grid` — l'état juste après, effets et gravité compris.
+
+`src/ui/animation.ts` ne fait que rejouer ces deux bornes dans le temps
+(surlignage ~420 ms, puis le résultat) ; il ne recalcule jamais de grille
+lui-même, donc aucun risque de divergence avec ce que le moteur a réellement
+décidé. Le test `tests/engine.test.ts` (« fournit les snapshots avant/après »)
+verrouille ce contrat. L'animation ne se déclenche que si un mot a réellement
+été formé — la pose ordinaire d'une lettre reste instantanée.
 
 ## 4. Équilibrage : ce que les mesures disent
 

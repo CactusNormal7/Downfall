@@ -25,22 +25,26 @@ body {
 header h1 { margin: 0; letter-spacing: 0.4em; font-size: 1.6rem; color: var(--accent); }
 header p { margin: 0.25rem 0 1.25rem; color: #8b949e; font-size: 0.85rem; }
 
+/* Votre terrain est la reference visuelle ; celui de l'adversaire n'est qu'une
+   information d'appoint (est-il en danger ? envoie-t-il du garbage ?) — il n'a
+   pas besoin d'etre lu lettre par lettre en jeu, donc il reste nettement plus
+   petit. Les deux tailles sont volontairement plus sobres qu'avant : sur une
+   grille de 18 lignes, une cellule trop grande fait sortir le terrain de l'ecran. */
 .boards { display: flex; gap: 2rem; flex-wrap: wrap; align-items: flex-start; }
-.board { display: flex; flex-direction: column; gap: 0.75rem; }
-.board--opponent { opacity: 0.75; }
+.board { display: flex; flex-direction: column; gap: 0.6rem; }
+.board--opponent { opacity: 0.7; }
 
-/* Les terrains sont volontairement grands : en ASCII, la lisibilite de la
-   grille EST l'interface. La taille de cellule suit la largeur de fenetre via
-   clamp(), pour rester jouable d'un portable a un grand ecran. */
 .grid {
   display: inline-block;
-  padding: 0.75rem 0.9rem;
+  padding: 0.6rem 0.7rem;
   border: 1px solid var(--dim);
   border-radius: 6px;
   background: #010409;
-  font-size: clamp(15px, 2.1vw, 26px);
-  line-height: 1.28;
+  line-height: 1.25;
 }
+
+.board--you .grid { font-size: clamp(11px, 1.35vw, 17px); }
+.board--opponent .grid { font-size: clamp(7px, 0.75vw, 10px); }
 
 .grid-row { display: block; white-space: pre; }
 
@@ -57,12 +61,39 @@ header p { margin: 0.25rem 0 1.25rem; color: #8b949e; font-size: 0.85rem; }
 .cell--garbage  { color: var(--garbage); }
 .cell--wildcard { color: var(--wildcard); }
 
+/* Surlignage d'un mot valide, entre sa detection et son effacement (voir
+   ui/animation.ts). C'est la reponse directe au "je ne comprends pas ce qui
+   se passe" : sans ca, des lettres disparaissent sans repere visuel des qu'un
+   mot se forme dans un sens qu'on ne regardait pas (vertical, diagonale, a
+   l'envers). */
+.cell--matched {
+  color: #0d1117;
+  background: var(--accent);
+  border-radius: 3px;
+  animation: match-pulse 0.42s ease-in-out infinite alternate;
+}
+
+@keyframes match-pulse {
+  from { box-shadow: 0 0 2px var(--accent); }
+  to   { box-shadow: 0 0 10px 2px var(--accent); }
+}
+
 .panel { /* suit la largeur de la grille : .board est une colonne flex */ }
 .panel-title { color: var(--accent); letter-spacing: 0.2em; font-size: 0.8rem; margin-bottom: 0.4rem; }
 .stat { display: flex; justify-content: space-between; gap: 1rem; font-size: 0.9rem; }
 .stat span:first-child { color: #8b949e; }
 .queue-letter { color: var(--letter); margin-left: 0.35em; }
 .warn { color: var(--garbage); font-size: 0.8rem; margin-top: 0.35rem; }
+
+/* Ligne reservee (toujours presente, vide ou pas) pour eviter que l'apparition
+   du texte du mot valide ne fasse sauter le reste du panneau. */
+.match-label {
+  min-height: 1.4em;
+  margin-top: 0.35rem;
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
 
 .banner {
   margin-bottom: 1rem;
