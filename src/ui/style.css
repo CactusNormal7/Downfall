@@ -1,0 +1,71 @@
+/* Rendu 100% ASCII : une seule police monospace, aucun asset graphique. */
+:root {
+  --bg: #0d1117;
+  --fg: #c9d1d9;
+  --dim: #30363d;
+  --letter: #79c0ff;
+  --falling: #ffd866;
+  --garbage: #f85149;
+  --wildcard: #a5d6ff;
+  --accent: #56d364;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 1.5rem;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: 'SF Mono', 'Cascadia Mono', 'Fira Code', Menlo, Consolas, monospace;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+header h1 { margin: 0; letter-spacing: 0.4em; font-size: 1.6rem; color: var(--accent); }
+header p { margin: 0.25rem 0 1.5rem; color: #8b949e; font-size: 0.85rem; }
+
+.boards { display: flex; gap: 2.5rem; flex-wrap: wrap; }
+.board { display: flex; flex-direction: column; gap: 0.75rem; }
+.board--opponent { opacity: 0.75; }
+
+.grid {
+  display: inline-block;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--dim);
+  border-radius: 4px;
+  background: #010409;
+}
+
+.grid-row { display: block; white-space: pre; }
+
+.cell {
+  display: inline-block;
+  width: 1.35em;
+  text-align: center;
+  font-weight: 600;
+}
+
+.cell--empty    { color: var(--dim); font-weight: 400; }
+.cell--letter   { color: var(--letter); }
+.cell--falling  { color: var(--falling); text-shadow: 0 0 8px currentColor; }
+.cell--garbage  { color: var(--garbage); }
+.cell--wildcard { color: var(--wildcard); }
+
+.panel { min-width: 14rem; }
+.panel-title { color: var(--accent); letter-spacing: 0.2em; font-size: 0.75rem; margin-bottom: 0.4rem; }
+.stat { display: flex; justify-content: space-between; gap: 1rem; font-size: 0.85rem; }
+.stat span:first-child { color: #8b949e; }
+.queue-letter { color: var(--letter); margin-left: 0.35em; }
+.warn { color: var(--garbage); font-size: 0.8rem; margin-top: 0.35rem; }
+
+.banner {
+  margin-bottom: 1rem;
+  padding: 0.6rem 1rem;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  color: var(--accent);
+  letter-spacing: 0.2em;
+}
+
+.help { margin-top: 1.5rem; color: #8b949e; font-size: 0.8rem; }

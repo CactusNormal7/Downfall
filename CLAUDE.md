@@ -158,9 +158,23 @@ Dépendance à sens unique : `ui -> engine -> core`. Jamais l'inverse.
 - Verticales en V2 : oui/non définitif.
 - Wildcard : nombre d'usages par partie et coût.
 - Mode sprint (limite de temps) en plus du mode survie.
-- Stack technique : **à choisir avec l'utilisateur** — voir la proposition en cours.
+- Stack technique : **tranchée** — TypeScript + Vite, rendu DOM monospace,
+  dictionnaire dérivé de Dicollecte (`an-array-of-french-words`, MIT), Vitest.
+  L'ODS est écarté : propriétaire, non redistribuable.
 
-## 10. Ce qu'il ne faut pas faire
+## 10. Calibration
+
+Toute constante `[BALANCE]` se règle avec `npm run simulate`, jamais à l'œil.
+Le brief §8 est explicite là-dessus. Deux modes :
+
+- `npm run simulate` — longueurs de mots, garbage, chaînes, jokers par partie.
+- `npm run simulate calibrate` — distribution des plateaux morts (percentiles).
+
+Le bot étant glouton à un coup, ses chiffres sont un **plancher** et non une
+prédiction du jeu humain : ils servent à détecter les dégénérescences, pas à
+fixer la difficulté. Voir README §4 pour les résultats et leur lecture.
+
+## 11. Ce qu'il ne faut pas faire
 
 - Ne pas implémenter de vrai réseau tant que la V0 solo n'est pas jugée fun.
 - Ne pas faire de recherche linéaire dans le dictionnaire (trie ou Set, point).
