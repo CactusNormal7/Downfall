@@ -17,16 +17,17 @@ Phase courante : **V0 solo**, pas de réseau.
 
 Ce qui doit exister à la fin de la V0 :
 
-- Boucle de chute d'une lettre dans une grille 8 × 14.
+- Boucle de chute d'une lettre dans une grille 12 × 18.
 - File d'attente de 3 lettres suivantes visible.
-- Détection et suppression des mots **horizontaux** de 3 lettres minimum.
+- Détection et suppression des mots de **2 lettres minimum**, dans les
+  **8 sens de lecture** (horizontal, vertical, 4 diagonales, chacun réversible).
 - Gravité + chaînes (un clear peut en déclencher un autre) avec multiplicateur.
 - Scoring non linéaire.
 - Défaite par topping out.
 - Amorces (« brides ») de fonctionnalités avancées : garbage, mots à effet, wildcard.
 
 Hors périmètre V0 (ne pas implémenter sans demande explicite) :
-serveur réel, WebSocket, comptes, matchmaking, persistance, mots verticaux, diagonales.
+serveur réel, WebSocket, comptes, matchmaking, persistance.
 
 ## 3. Règle centrale : le multijoueur est *simulé*, pas absent
 
@@ -109,13 +110,18 @@ Dépendance à sens unique : `ui -> engine -> core`. Jamais l'inverse.
 
 ## 5. Règles de gameplay à respecter (source de vérité)
 
-- Grille : **8 colonnes × 14 lignes**.
+- Grille : **12 colonnes × 18 lignes**.
 - File d'attente : **3 lettres** visibles.
-- Mot valide : **≥ 3 lettres**, horizontal uniquement en V0. `[V2]` vertical.
-  Diagonales : jamais prévues.
-- Scoring (base X, `[BALANCE]`) : 3 lettres = X · 1 ; 4 = X · 2,5 ; 5 = X · 5 ;
-  6+ = X · 9. Courbe volontairement agressive pour tuer le spam de mots courts —
-  c'est le **risque de design n° 1**, ne pas l'adoucir sans playtest.
+- Mot valide : **≥ 2 lettres**, lu dans les **8 sens** (horizontal, vertical,
+  les 4 diagonales, et chacun à l'envers). Le scan ne parcourt que 4 vecteurs et
+  teste chaque segment dans les deux sens : scanner 8 vecteurs examinerait deux
+  fois les mêmes cellules.
+- Une cellule ne peut être facturée qu'**une seule fois** par résolution. Avec
+  4 axes, sans cet arbitrage, un placement unique serait payé une dizaine de fois.
+- Scoring (base X, `[BALANCE]`) : 2 = X · 0,4 ; 3 = X · 1 ; 4 = X · 2,5 ;
+  5 = X · 6 ; 6 = X · 16 ; puis × ~2,5 par lettre jusqu'à 10, plafonné ensuite.
+  **Invariant à ne jamais casser : `2 · m(n) < m(n+1)`.** C'est la seule chose
+  qui empêche le jeu de se résumer à poser des mots de 2 lettres.
 - Chaînes : multiplicateur cumulatif par clear consécutif dans la même chute.
 - Garbage : lettres-bruit rendues en symboles non alphabétiques `¤ § ¬ ‡`, elles
   ne participent à aucun mot. Nombre de lignes proportionnel au score du mot.
@@ -155,8 +161,11 @@ Dépendance à sens unique : `ui -> engine -> core`. Jamais l'inverse.
 
 ## 9. Décisions ouvertes (ne pas trancher seul)
 
-- Verticales en V2 : oui/non définitif.
-- Wildcard : nombre d'usages par partie et coût.
+- **Pression de jeu** : depuis l'ouverture à 2 lettres et aux 8 directions, les
+  parties durent ~23× plus longtemps et le garbage ne circule quasiment plus
+  (0,4 ligne par partie). Le levier à trancher est décrit dans README §4.
+- Wildcard : nombre d'usages par partie et coût. Le filet anti-plateau-mort ne
+  se déclenche plus jamais — à supprimer ou à reparamétrer.
 - Mode sprint (limite de temps) en plus du mode survie.
 - Stack technique : **tranchée** — TypeScript + Vite, rendu DOM monospace,
   dictionnaire dérivé de Dicollecte (`an-array-of-french-words`, MIT), Vitest.

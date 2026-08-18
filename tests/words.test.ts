@@ -24,24 +24,106 @@ describe('detection de mots', () => {
     expect(matches.map((match) => match.word)).toEqual(['CHATS']);
   });
 
-  it('ignore les mots de moins de 3 lettres', () => {
+  it('accepte les mots de 2 lettres', () => {
     const matches = findWords(gridFromAscii('..OU....'), tinyDictionary(['OU']));
-    expect(matches).toHaveLength(0);
+    expect(matches.map((match) => match.word)).toEqual(['OU']);
   });
 
-  it('le garbage coupe les mots en deux', () => {
-    const grid = gridFromAscii('CH¤AT...');
-    expect(findWords(grid, tinyDictionary(['CHAT']))).toHaveLength(0);
+  it('ignore les mots de 1 lettre', () => {
+    expect(findWords(gridFromAscii('..A.....'), tinyDictionary(['A']))).toHaveLength(0);
   });
 
-  it('ne detecte pas les mots verticaux en V0', () => {
+  it('le garbage coupe les mots en deux, sur tous les axes', () => {
+    expect(findWords(gridFromAscii('CH¤AT...'), tinyDictionary(['CHAT']))).toHaveLength(0);
+    const diagonal = gridFromAscii(`
+      C...
+      .H..
+      ..¤.
+      ...T
+    `);
+    expect(findWords(diagonal, tinyDictionary(['CHAT']))).toHaveLength(0);
+  });
+
+  it('detecte les mots verticaux vers le bas', () => {
     const grid = gridFromAscii(`
       C...
       H...
       A...
       T...
     `);
-    expect(findWords(grid, tinyDictionary(['CHAT']))).toHaveLength(0);
+    const matches = findWords(grid, tinyDictionary(['CHAT']));
+    expect(matches[0]?.word).toBe('CHAT');
+    expect(matches[0]?.direction).toBe('S');
+    expect(matches[0]?.reversed).toBe(false);
+  });
+
+  it('detecte les mots verticaux vers le haut', () => {
+    const grid = gridFromAscii(`
+      T...
+      A...
+      H...
+      C...
+    `);
+    const matches = findWords(grid, tinyDictionary(['CHAT']));
+    expect(matches[0]?.word).toBe('CHAT');
+    expect(matches[0]?.reversed).toBe(true);
+    // Le mot se lit du bas vers le haut : il demarre en derniere ligne.
+    expect(matches[0]?.row).toBe(3);
+  });
+
+  it('detecte un mot ecrit a l envers a l horizontale', () => {
+    const matches = findWords(gridFromAscii('.TAHC...'), tinyDictionary(['CHAT']));
+    expect(matches[0]?.word).toBe('CHAT');
+    expect(matches[0]?.reversed).toBe(true);
+  });
+
+  it('detecte une diagonale descendante', () => {
+    const grid = gridFromAscii(`
+      C...
+      .H..
+      ..A.
+      ...T
+    `);
+    const matches = findWords(grid, tinyDictionary(['CHAT']));
+    expect(matches[0]?.word).toBe('CHAT');
+    expect(matches[0]?.direction).toBe('SE');
+  });
+
+  it('detecte une diagonale montante', () => {
+    const grid = gridFromAscii(`
+      ...T
+      ..A.
+      .H..
+      C...
+    `);
+    const matches = findWords(grid, tinyDictionary(['CHAT']));
+    expect(matches[0]?.word).toBe('CHAT');
+    expect(matches[0]?.direction).toBe('NE');
+  });
+
+  it('detecte une diagonale a l envers', () => {
+    // Lue de haut-gauche vers bas-droite on a TAHC ; a l'envers, CHAT.
+    const grid = gridFromAscii(`
+      T...
+      .A..
+      ..H.
+      ...C
+    `);
+    const matches = findWords(grid, tinyDictionary(['CHAT']));
+    expect(matches[0]?.word).toBe('CHAT');
+    expect(matches[0]?.reversed).toBe(true);
+  });
+
+  it('ne facture jamais deux fois la meme cellule', () => {
+    // CHAT horizontal et CHAT vertical partagent le C : un seul des deux passe.
+    const grid = gridFromAscii(`
+      CHAT
+      H...
+      A...
+      T...
+    `);
+    const matches = findWords(grid, tinyDictionary(['CHAT']));
+    expect(matches).toHaveLength(1);
   });
 
   it('resout un joker en la lettre qui forme un mot', () => {

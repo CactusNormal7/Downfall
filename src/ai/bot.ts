@@ -12,7 +12,7 @@
  */
 import type { Action, GameState, PlayerId } from '../core/types.js';
 import { dropRow, setCell } from '../core/grid.js';
-import { findWords } from '../core/words.js';
+import { findWordsThrough } from '../core/words.js';
 import { scoreWord } from '../core/scoring.js';
 import type { Dictionary } from '../dict/dictionary.js';
 
@@ -39,7 +39,9 @@ export function chooseBotAction(
     if (landing < 0) continue;
 
     const probe = setCell(bot.grid, landing, col, bot.falling.letter);
-    const matches = findWords(probe, dictionary);
+    // Seuls les mots traversant la case posee peuvent avoir change : un scan
+    // complet par colonne coutait ~20k lookups pour rien sur une grille 12x18.
+    const matches = findWordsThrough(probe, landing, col, dictionary);
     const wordScore = matches.reduce((sum, match) => sum + scoreWord(match.word, 1), 0);
 
     // A score egal, on prefere la colonne la plus basse : garder la grille plate

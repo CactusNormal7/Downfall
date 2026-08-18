@@ -71,6 +71,7 @@ export function render(targets: RenderTargets, state: GameState, you: PlayerId):
       </div>
     </div>
     <div class="help">
-      ← → déplacer · ↓ descente rapide · Espace pose immédiate · Entrée rejouer
+      ← → déplacer · ↓ descente rapide · Espace pose immédiate · Entrée rejouer<br />
+      Mots de 2 lettres minimum, lus horizontalement, verticalement, en diagonale, et à l'envers.
     </div>`;
 }
