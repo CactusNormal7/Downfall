@@ -3,7 +3,7 @@ import { createGame, step, opponentOf } from '../src/core/engine.js';
 import type { Action, GameEvent, GameState } from '../src/core/types.js';
 import { gridFromAscii, gridToAscii } from '../src/core/grid.js';
 import { GRID_COLS, GRID_ROWS, QUEUE_SIZE } from '../src/config.js';
-import { fullDictionary, tinyDictionary } from './helpers.js';
+import { bottomGrid, fullDictionary, tinyDictionary } from './helpers.js';
 
 /** Applique une suite d'actions et collecte tous les evenements. */
 function run(state: GameState, actions: Action[], dictionary = fullDictionary) {
@@ -27,8 +27,6 @@ function withGrid(state: GameState, ascii: string): GameState {
     },
   };
 }
-
-const EMPTY_ROWS = Array.from({ length: GRID_ROWS - 1 }, () => '.'.repeat(GRID_COLS));
 
 describe('moteur', () => {
   it('cree deux joueurs des la V0', () => {
@@ -77,7 +75,7 @@ describe('moteur', () => {
     let state = createGame(1, 2);
     state = step(state, { type: 'TICK', player: 'P0' }, dictionary).state;
     // On installe CHA_ au sol et on force un T en chute sur la 4e colonne.
-    state = withGrid(state, [...EMPTY_ROWS, 'CHA.....'].join('\n'));
+    state = withGrid(state, bottomGrid('CHA'));
     state = {
       ...state,
       players: {
@@ -98,7 +96,7 @@ describe('moteur', () => {
     const dictionary = tinyDictionary(['MAISON']);
     let state = createGame(1, 2);
     state = step(state, { type: 'TICK', player: 'P0' }, dictionary).state;
-    state = withGrid(state, [...EMPTY_ROWS, 'MAISO...'].join('\n'));
+    state = withGrid(state, bottomGrid('MAISO'));
     state = {
       ...state,
       players: {
@@ -120,10 +118,7 @@ describe('moteur', () => {
     const dictionary = tinyDictionary(['ROI', 'CHAT']);
     let state = createGame(1, 2);
     state = step(state, { type: 'TICK', player: 'P0' }, dictionary).state;
-    state = withGrid(
-      state,
-      [...EMPTY_ROWS.slice(0, GRID_ROWS - 3), 'CHA.....', 'ROI.....', '........'].join('\n'),
-    );
+    state = withGrid(state, bottomGrid('CHA', 'ROI', ''));
     state = {
       ...state,
       players: {
@@ -143,7 +138,7 @@ describe('moteur', () => {
     const dictionary = tinyDictionary(['BOOM']);
     let state = createGame(1, 2);
     state = step(state, { type: 'TICK', player: 'P0' }, dictionary).state;
-    state = withGrid(state, [...EMPTY_ROWS.slice(0, GRID_ROWS - 2), '.ZZZZZ..', 'BOO.....'].join('\n'));
+    state = withGrid(state, bottomGrid('.ZZZZZ', 'BOO'));
     state = {
       ...state,
       players: {
@@ -163,10 +158,7 @@ describe('moteur', () => {
     let state = createGame(1, 2);
     state = step(state, { type: 'TICK', player: 'P0' }, dictionary).state;
     // Colonne 0 remplie sauf la case du haut, ou la lettre va se verrouiller.
-    const column = Array.from({ length: GRID_ROWS }, (_, row) =>
-      row === 0 ? '........' : 'X.......',
-    );
-    state = withGrid(state, column.join('\n'));
+    state = withGrid(state, bottomGrid(...Array.from({ length: GRID_ROWS - 1 }, () => 'X')));
     state = {
       ...state,
       players: {

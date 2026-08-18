@@ -7,11 +7,41 @@
 
 // --- Grille -----------------------------------------------------------------
 
-export const GRID_COLS = 8;
-export const GRID_ROWS = 14;
+export const GRID_COLS = 12;
+export const GRID_ROWS = 18;
 
-/** Longueur minimale d'un mot valide. [BALANCE] 2 trivialiserait le jeu. */
-export const MIN_WORD_LENGTH = 3;
+/**
+ * Longueur minimale d'un mot valide. [BALANCE]
+ * A 2, la densite de mots explose (voir README §4) : c'est un choix assume qui
+ * transforme le jeu en course a la vitesse plutot qu'en jeu de construction.
+ * La courbe de score compense en rendant les mots de 2 lettres presque gratuits.
+ */
+export const MIN_WORD_LENGTH = 2;
+
+/**
+ * Le plus long mot detectable : la plus grande dimension de la grille, puisque
+ * les mots verticaux peuvent occuper une colonne entiere.
+ */
+export const MAX_WORD_LENGTH = Math.max(GRID_COLS, GRID_ROWS);
+
+// --- Directions de lecture --------------------------------------------------
+
+/**
+ * Directions scannees. Chaque direction est aussi testee **a l'envers** : on ne
+ * scanne donc que 4 vecteurs pour couvrir les 8 sens de lecture, ce qui evite
+ * de compter deux fois le meme groupe de cellules.
+ *
+ * Diagonales activees (elles etaient marquees "jamais" dans le brief initial —
+ * decision revue par l'utilisateur). Consequence a garder en tete : une lettre
+ * posee appartient desormais a 4 axes au lieu d'1, donc la probabilite qu'elle
+ * complete un mot est bien plus elevee. [BALANCE]
+ */
+export const WORD_DIRECTIONS: ReadonlyArray<{ name: string; dRow: number; dCol: number }> = [
+  { name: 'E', dRow: 0, dCol: 1 },   // horizontal   (+ OUEST par lecture inverse)
+  { name: 'S', dRow: 1, dCol: 0 },   // vertical bas (+ HAUT par lecture inverse)
+  { name: 'SE', dRow: 1, dCol: 1 },  // diagonale bas-droite (+ haut-gauche)
+  { name: 'NE', dRow: -1, dCol: 1 }, // diagonale haut-droite (+ bas-gauche)
+];
 
 // --- File d'attente ---------------------------------------------------------
 
@@ -43,24 +73,34 @@ export const SCORE_BASE = 100;
  * La courbe du brief (1 / 2.5 / 5 / 9) violait cet invariant en un point :
  * 2 x 2.5 = 5, donc deux mots de 4 lettres valaient EXACTEMENT un mot de 5.
  * A parite de score, le joueur choisit toujours le coup le plus facile — le
- * spam redevenait optimal a cet endroit precis. 5 et 6+ sont donc remontes.
- * Le test `tests/scoring.test.ts` verrouille cet invariant.
+ * spam redevenait optimal a cet endroit precis.
+ *
+ * Depuis l'ouverture aux mots de 2 lettres, cet invariant est la SEULE chose
+ * qui empeche le jeu de se resumer a poser des "DE" et des "OU" : un mot de
+ * 2 lettres vaut 0.4 X, soit moins de la moitie d'un mot de 3.
+ * Le test `tests/scoring.test.ts` verrouille l'invariant sur toute la plage.
  */
 export const SCORE_LENGTH_MULTIPLIERS: Readonly<Record<number, number>> = {
+  2: 0.4,
   3: 1,
   4: 2.5,
   5: 6,
-  6: 14,
-  7: 30,
-  8: 65,
+  6: 16,
+  7: 39,
+  8: 98,
+  9: 244,
+  10: 610,
 };
 
 /**
- * Applique au-dela de la plus grande cle. Sur une grille de 8 colonnes aucun
- * mot horizontal ne peut depasser 8 lettres, donc ce cas n'arrive pas en V0 —
- * il existe pour le jour ou la grille s'elargira ou ou le vertical s'activera.
+ * Plafond de la courbe. Au-dela de 10 lettres, le multiplicateur ne monte plus :
+ * aligner 11 cellules exactes releve de l'accident, donc l'anti-spam n'a plus
+ * d'objet — et une exponentielle non bornee produirait des scores illisibles.
  */
-export const SCORE_LENGTH_MULTIPLIER_MAX = 65;
+export const SCORE_LENGTH_MULTIPLIER_MAX = 610;
+
+/** Derniere longueur sur laquelle l'invariant sur-additif est verifie. */
+export const MAX_SCORED_LENGTH = 10;
 
 /**
  * Multiplicateur de chaine : +0.5 par maillon supplementaire dans la meme chute.
@@ -72,14 +112,18 @@ export const CHAIN_MULTIPLIER_STEP = 0.5;
 
 /**
  * Score necessaire pour envoyer une ligne de garbage a l'adversaire. [BALANCE]
- * Calibre pour que 3 et 4 lettres n'envoient RIEN : le garbage est une
+ * Calibre pour que 2, 3 et 4 lettres n'envoient RIEN : le garbage reste une
  * recompense de construction, pas un debit continu. Avec les valeurs actuelles :
- * 5 lettres -> 1 ligne, 6 lettres -> 3 lignes, 6 lettres en chaine x2 -> 4 (cap).
+ * 5 lettres -> 1 ligne, 6 -> 2 lignes, 7 -> 6 (cap).
  */
-export const GARBAGE_SCORE_PER_ROW = 400;
+export const GARBAGE_SCORE_PER_ROW = 600;
 
-/** Plafond de garbage envoye par un seul clear, pour eviter les one-shots. [BALANCE] */
-export const GARBAGE_MAX_ROWS_PER_CLEAR = 4;
+/**
+ * Plafond de garbage envoye par un seul clear, pour eviter les one-shots.
+ * Remonte a 6 avec l'agrandissement de la grille : sur 18 lignes, 4 lignes de
+ * bruit ne se voyaient presque plus. [BALANCE]
+ */
+export const GARBAGE_MAX_ROWS_PER_CLEAR = 6;
 
 /** Glyphes de bruit. Non alphabetiques : ils ne participent a aucun mot. */
 export const GARBAGE_GLYPHS = ['¤', '§', '¬', '‡'] as const;

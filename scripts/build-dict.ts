@@ -2,9 +2,9 @@
  * Genere le dictionnaire de jeu a partir de `an-array-of-french-words`
  * (liste derivee de Dicollecte, licence MIT).
  *
- * Le jeu n'a pas besoin des 336k formes flechies : la grille fait 8 colonnes,
- * donc aucun mot de plus de 8 lettres ne peut jamais etre forme horizontalement.
- * On filtre agressivement pour garder un asset leger a charger.
+ * Le jeu n'a pas besoin des 336k formes flechies : aucun mot plus long que la
+ * plus grande dimension de la grille ne peut jamais tenir dedans. On filtre
+ * pour garder un asset leger a charger.
  *
  * Sortie : src/dict/words-fr.txt (un mot par ligne, majuscules, sans accent).
  */
@@ -12,7 +12,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
-import { MIN_WORD_LENGTH, GRID_COLS } from '../src/config.js';
+import { MIN_WORD_LENGTH, MAX_WORD_LENGTH } from '../src/config.js';
 import { normalizeWord } from '../src/dict/normalize.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -21,21 +21,37 @@ const OUTPUT = resolve(HERE, '../src/dict/words-fr.txt');
 
 const raw = JSON.parse(readFileSync(SOURCE, 'utf8')) as string[];
 
+/**
+ * Symboles d'unites et abreviations scientifiques que Dicollecte liste comme
+ * entrees a deux lettres. Ce ne sont pas des mots : les laisser passer ferait
+ * de "CM" ou "KG" des coups valides, ce qui casse la promesse du jeu. La liste
+ * est explicite plutot qu'heuristique — elle est courte et verifiable a l'oeil.
+ */
+const ABBREVIATIONS = new Set([
+  'CC', 'CF', 'CG', 'CH', 'CL', 'CM', 'DG', 'DL', 'DM',
+  'KG', 'KM', 'MG', 'MS', 'PH',
+]);
+
 const kept = new Set<string>();
 let rejectedLength = 0;
 let rejectedCharset = 0;
+let rejectedAbbreviation = 0;
 
 for (const entry of raw) {
   const word = normalizeWord(entry);
 
   // Un mot plus long que la grille est injouable : il ne rentre pas.
-  if (word.length < MIN_WORD_LENGTH || word.length > GRID_COLS) {
+  if (word.length < MIN_WORD_LENGTH || word.length > MAX_WORD_LENGTH) {
     rejectedLength += 1;
     continue;
   }
   // Rejette apostrophes, traits d'union, chiffres, lettres non normalisables.
   if (!/^[A-Z]+$/.test(word)) {
     rejectedCharset += 1;
+    continue;
+  }
+  if (ABBREVIATIONS.has(word)) {
+    rejectedAbbreviation += 1;
     continue;
   }
   kept.add(word);
@@ -48,7 +64,9 @@ const byLength = new Map<number, number>();
 for (const word of sorted) byLength.set(word.length, (byLength.get(word.length) ?? 0) + 1);
 
 console.log(`[LEXA][DICT] BUILD source=${raw.length} kept=${sorted.length}`);
-console.log(`[LEXA][DICT] REJECT length=${rejectedLength} charset=${rejectedCharset}`);
+console.log(
+  `[LEXA][DICT] REJECT length=${rejectedLength} charset=${rejectedCharset} abbrev=${rejectedAbbreviation}`,
+);
 for (const len of [...byLength.keys()].sort((a, b) => a - b)) {
   console.log(`[LEXA][DICT] LENGTH len=${len} count=${byLength.get(len)}`);
 }

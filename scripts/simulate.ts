@@ -31,7 +31,12 @@ const dictionary = Dictionary.fromText(
 );
 
 const PLAYERS: readonly PlayerId[] = ['P0', 'P1'];
-const MAX_TICKS = 6000;
+/**
+ * Plafond de securite. Monte a 20000 depuis l'ouverture aux mots de 2 lettres
+ * et aux diagonales : les parties durent ~9000 ticks au lieu de ~400, et un
+ * plafond trop bas faisait mentir la moyenne (toutes les parties le touchaient).
+ */
+const MAX_TICKS = 20000;
 
 const args = process.argv.slice(2);
 const mode = args.find((arg) => Number.isNaN(Number(arg))) ?? 'match';

@@ -1,10 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { chainMultiplier, garbageRowsFor, lengthMultiplier, scoreWord } from '../src/core/scoring.js';
-import { GARBAGE_MAX_ROWS_PER_CLEAR, GRID_COLS, MIN_WORD_LENGTH } from '../src/config.js';
+import {
+  GARBAGE_MAX_ROWS_PER_CLEAR,
+  MAX_SCORED_LENGTH,
+  MIN_WORD_LENGTH,
+} from '../src/config.js';
 
 describe('scoring', () => {
   it('applique une courbe croissante et non lineaire', () => {
-    for (let length = MIN_WORD_LENGTH; length < GRID_COLS; length += 1) {
+    for (let length = MIN_WORD_LENGTH; length < MAX_SCORED_LENGTH; length += 1) {
       expect(lengthMultiplier(length + 1)).toBeGreaterThan(lengthMultiplier(length));
     }
   });
@@ -13,12 +17,14 @@ describe('scoring', () => {
     // LE test qui protege le concept : la courbe doit etre strictement
     // sur-additive. Deux mots de n lettres doivent toujours valoir moins
     // qu'un seul mot de n+1. Si ce test casse, le jeu degenere en spam.
-    for (let length = MIN_WORD_LENGTH; length < GRID_COLS; length += 1) {
+    for (let length = MIN_WORD_LENGTH; length < MAX_SCORED_LENGTH; length += 1) {
       expect(2 * lengthMultiplier(length)).toBeLessThan(lengthMultiplier(length + 1));
     }
   });
 
   it('applique l invariant sur de vrais mots', () => {
+    // Le mot de 2 lettres est le nouveau plancher : il doit rester derisoire.
+    expect(scoreWord('OU', 1) * 2).toBeLessThan(scoreWord('AIE', 1));
     expect(scoreWord('AIE', 1) * 2).toBeLessThan(scoreWord('CHAT', 1));
     expect(scoreWord('CHAT', 1) * 2).toBeLessThan(scoreWord('CHATS', 1));
     expect(scoreWord('CHATS', 1) * 2).toBeLessThan(scoreWord('MAISON', 1));
@@ -35,7 +41,8 @@ describe('scoring', () => {
   });
 
   it("n'envoie aucun garbage pour un mot court", () => {
-    // Un mot de 3 ou 4 lettres marque des points mais ne punit pas l'adversaire.
+    // Jusqu'a 4 lettres on marque des points, mais on ne punit pas l'adversaire.
+    expect(garbageRowsFor(scoreWord('OU', 1))).toBe(0);
     expect(garbageRowsFor(scoreWord('AIE', 1))).toBe(0);
     expect(garbageRowsFor(scoreWord('CHAT', 1))).toBe(0);
   });
